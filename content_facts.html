@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Content Facts Reels - Mindful Feed</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Modern Mobile Shell & Touch Tweaks */
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #09090b;
+            color: #ffffff;
+            overflow: hidden;
+            touch-action: none;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        #app-shell {
+            position: relative;
+            width: 100%;
+            max-width: 440px;
+            height: 100dvh;
+            margin: 0 auto;
+            background: #000000;
+            overflow: hidden;
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.9);
+        }
+
+        /* FDA Nutritional Label Styling */
+        .fda-card {
+            background-color: #ffffff;
+            color: #000000;
+            border: 2px solid #000000;
+            outline: 4px solid #ffffff;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.8), 0 0 0 6px #000000;
+            padding: 12px 14px;
+            width: 92%;
+            max-width: 350px;
+            border-radius: 4px;
+        }
+
+        .fda-title {
+            font-size: 2.1rem;
+            font-weight: 900;
+            letter-spacing: -0.04em;
+            line-height: 0.95;
+            font-family: 'Arial Black', Impact, sans-serif;
+            border-bottom: 10px solid #000000;
+            padding-bottom: 4px;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+
+        .fda-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            padding: 4px 0;
+            border-bottom: 1px solid #000000;
+            font-size: 0.95rem;
+            line-height: 1.2;
+        }
+
+        .fda-row-thick {
+            border-bottom: 6px solid #000000;
+        }
+
+        .fda-row-medium {
+            border-bottom: 3px solid #000000;
+        }
+
+        /* Vertical Reel Slide Animations */
+        .reel-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .slide-up-out {
+            transform: translateY(-100%);
+        }
+
+        .slide-up-in-start {
+            transform: translateY(100%);
+            transition: none !important;
+        }
+
+        .slide-up-in-active {
+            transform: translateY(0%);
+        }
+
+        /* Pulse Animations */
+        @keyframes subtle-pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.85; transform: scale(0.98); }
+        }
+
+        .animate-subtle-pulse {
+            animation: subtle-pulse 2s infinite ease-in-out;
+        }
+
+        /* Spinning Audio Disc */
+        @keyframes spin-disc {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .animate-spin-disc {
+            animation: spin-disc 4s linear infinite;
+        }
+    </style>
+<script src="config.js"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script><script src="cloud.js"></script></head>
+<body class="select-none">
+
+    <!-- Mobile Shell Container -->
+    <div id="app-shell" class="flex flex-col">
+        
+        <!-- TOP APP BAR -->
+        <header class="absolute top-0 left-0 right-0 z-40 p-4 flex justify-between items-center bg-gradient-to-b from-black/80 via-black/40 to-transparent pointer-events-none">
+            <!-- Feed Mode & Badge -->
+            <div class="flex items-center gap-2 pointer-events-auto">
+                <span class="bg-white/10 backdrop-blur-md text-white border border-white/20 text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-lg">
+                    <span id="feed-mode-icon">🧠</span>
+                    <span id="feed-mode-text">Mindful Feed</span>
+                </span>
+                
+                <span id="streak-badge" class="bg-red-500/80 backdrop-blur-md text-white text-[11px] font-black px-2.5 py-1 rounded-full border border-red-400/30">
+                    Streak: 0/3 AI
+                </span>
+            </div>
+
+            <a href="attention_nutrition.html" style="pointer-events:auto;background:#ffffff;color:#193e2c;border-radius:999px;padding:9px 12px;font-weight:800;font-size:11px;text-decoration:none">Daily report ↗</a>
+                 <!-- Sound Toggle Button -->
+            <button id="sound-toggle-btn" class="pointer-events-auto bg-black/50 backdrop-blur-md hover:bg-black/80 text-white p-2.5 rounded-full border border-white/20 active:scale-90 transition-transform">
+                <svg id="icon-muted" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"></path></svg>
+                <svg id="icon-unmuted" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path></svg>
+            </button>
+        </header>
+
+        <!-- MAIN REEL CONTAINER -->
+        <div id="reel-viewport" class="relative w-full h-full bg-black overflow-hidden">
+            <div id="reel-container" class="reel-container w-full h-full">
+                
+                <!-- Background Video Player -->
+                <video 
+                    id="video-player"
+                    class="absolute inset-0 w-full h-full object-cover filter blur-2xl scale-110 transition-all duration-700 bg-gray-950"
+                    loop
+                    muted
+                    playsinline
+                    webkit-playsinline
+                    preload="auto">
+                </video>
+
+                <!-- Dynamic HTML5 Canvas Fallback (Generates visualizer if network/video stalls) -->
+                <canvas id="fallback-canvas" class="absolute inset-0 w-full h-full object-cover filter blur-2xl scale-110 transition-all duration-700 pointer-events-none opacity-0"></canvas>
+
+                <!-- Overlay Gradient for contrast -->
+                <div class="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/80 pointer-events-none"></div>
+
+                <!-- RIGHT ACTION SIDEBAR (TikTok / Reels Style) -->
+                <div id="right-sidebar" class="absolute right-3 bottom-20 z-30 flex flex-col items-center gap-5 opacity-30 transition-opacity duration-500">
+                    <div class="relative group cursor-pointer">
+                        <img id="creator-avatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80" class="w-11 h-11 rounded-full border-2 border-white object-cover shadow-lg" alt="Avatar">
+                        <span class="absolute -bottom-1.5 left-1/2 -translate-x-1/2 bg-red-500 text-white rounded-full p-0.5"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"></path></svg></span>
+                    </div>
+
+                    <button id="like-btn" class="flex flex-col items-center text-white active:scale-125 transition-transform">
+                        <div class="p-2.5 bg-black/40 backdrop-blur-md rounded-full border border-white/10"><svg id="like-icon" class="w-6 h-6 fill-white" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg></div>
+                        <span id="like-count" class="text-xs font-bold mt-1 shadow-black drop-shadow-md">14.2K</span>
+                    </button>
+
+                    <button class="flex flex-col items-center text-white active:scale-110 transition-transform">
+                        <div class="p-2.5 bg-black/40 backdrop-blur-md rounded-full border border-white/10"><svg class="w-6 h-6 fill-white" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg></div>
+                        <span class="text-xs font-bold mt-1 shadow-black drop-shadow-md">842</span>
+                    </button>
+
+                    <button class="flex flex-col items-center text-white active:scale-110 transition-transform">
+                        <div class="p-2.5 bg-black/40 backdrop-blur-md rounded-full border border-white/10"><svg class="w-6 h-6 fill-white" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></svg></div>
+                        <span class="text-xs font-bold mt-1 shadow-black drop-shadow-md">Share</span>
+                    </button>
+
+                    <div class="w-10 h-10 rounded-full border-2 border-white/80 overflow-hidden bg-zinc-800 flex items-center justify-center animate-spin-disc">
+                        <div class="w-3 h-3 rounded-full bg-white"></div>
+                    </div>
+                </div>
+
+                <!-- BOTTOM CAPTION INFO -->
+                <div id="bottom-info" class="absolute bottom-5 left-4 right-20 z-30 opacity-30 transition-opacity duration-500 text-white drop-shadow-lg">
+                    <div class="flex items-center gap-2 mb-1.5">
+                        <span id="creator-handle" class="font-bold text-base tracking-wide shadow-black drop-shadow-md">@brainrot_central</span>
+                        <span id="verified-badge" class="bg-blue-500 text-white p-0.5 rounded-full text-[10px]"><svg class="w-2.5 h-2.5 fill-current" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></span>
+                    </div>
+                    <p id="reel-caption" class="text-sm font-normal text-gray-100 line-clamp-2 leading-snug mb-2 shadow-black drop-shadow-md">
+                        Wait for the end... AI generated neural doom loop! 😱 #brainrot #viral #fyp
+                    </p>
+                    <div class="flex items-center gap-2 text-xs text-gray-300">
+                        <svg class="w-3.5 h-3.5 fill-current animate-pulse" viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
+                        <span id="audio-title" class="truncate font-mono">Original Sound - Mindful Algorithm</span>
+                    </div>
+                </div>
+
+                <!-- FDA NUTRITIONAL CONTENT WARNING OVERLAY -->
+                <div id="label-overlay" class="absolute inset-0 z-50 flex items-center justify-center bg-black/65 backdrop-blur-md p-4 transition-opacity duration-500">
+                    <div class="fda-card animate-subtle-pulse">
+                        <div class="flex justify-between items-baseline">
+                            <h1 class="fda-title">Content Facts</h1>
+                        </div>
+                        <div class="font-bold text-xs pb-1 mb-1 border-b-[6px] border-black flex justify-between">
+                            <span>Serving Size: 1 Reel (Short)</span>
+                            <span id="label-category-pill" class="bg-black text-white px-1.5 py-0.5 rounded text-[10px] font-black tracking-wider uppercase">AI BRAINROT</span>
+                        </div>
+                        
+                        <div class="fda-row fda-row-thick">
+                            <span class="font-black text-sm">Amount Per Serving</span>
+                            <span class="text-xs font-bold text-gray-700">% Daily Impact*</span>
+                        </div>
+                        
+                        <div class="fda-row">
+                            <strong class="font-black">Est. Duration</strong>
+                            <span id="stat-length" class="font-bold">24s</span>
+                        </div>
+                        <div class="fda-row">
+                            <strong class="font-black">AI Generated Content</strong>
+                            <span id="stat-ai" class="font-bold">96%</span>
+                        </div>
+                        <div class="fda-row">
+                            <strong class="font-black">Brainrot Index</strong>
+                            <span id="stat-brainrot" class="font-bold">98%</span>
+                        </div>
+                        <div class="fda-row">
+                            <strong class="font-black">Educational Value</strong>
+                            <span id="stat-edu" class="font-bold">0%</span>
+                        </div>
+                        <div class="fda-row">
+                            <strong class="font-black">Positive Mood (demo)</strong>
+                            <span id="stat-happiness" class="font-bold">+12%</span>
+                        </div>
+                        <div class="fda-row">
+                            <strong class="font-black">Low Mood (demo)</strong>
+                            <span id="stat-sadness" class="font-bold">+4%</span>
+                        </div>
+                        <div class="fda-row">
+                            <strong class="font-black">Stimulus Level (demo)</strong>
+                            <span id="stat-dopamine" class="font-bold">+340%</span>
+                        </div>
+                        <div class="fda-row fda-row-thick mt-1">
+                            <strong class="font-black text-base">Capture Signal (demo)</strong>
+                            <strong id="stat-attention" class="text-base font-black text-red-600">-45%</strong>
+                        </div>
+                        
+                        <p class="text-[9.5px] leading-tight text-gray-700 mt-2 mb-3">
+                            * Illustrative demo estimates only. Not scientific or clinical measurements.
+                        </p>
+
+                        <!-- ACTION BUTTON TO UNLOCK -->
+                        <button id="accept-btn" class="w-full bg-black hover:bg-zinc-800 text-white font-black uppercase tracking-wider py-3.5 text-sm rounded shadow-lg active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-2">
+                            <span>VIEW CONTENT</span>
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 3-STRIKE BRAINROT INTERVENTION MODAL -->
+                <div id="intervention-modal" class="hidden absolute inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-xl p-5">
+                    <div class="bg-red-600 text-white p-6 rounded-3xl max-w-sm w-full text-center border-4 border-red-400 shadow-2xl flex flex-col items-center animate-bounce-short">
+                        <div class="w-16 h-16 bg-white text-red-600 rounded-full flex items-center justify-center mb-4 shadow-lg">
+                            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                        </div>
+                        <h2 class="text-2xl font-black mb-2 uppercase tracking-wide">⚠️ REFLECTION MOMENT</h2>
+                        <p class="mb-5 font-medium text-sm leading-relaxed text-red-50">
+                            You have consumed <strong class="underline decoration-2">3 AI Brainrot videos in a row</strong>! Next up: <strong class="bg-white/20 px-1 rounded">3 educational reels</strong>.
+                        </p>
+                        <button id="detox-btn" class="bg-white hover:bg-gray-100 text-red-700 font-black py-4 px-6 rounded-2xl w-full uppercase tracking-wider text-sm shadow-2xl active:scale-95 transition-transform cursor-pointer flex items-center justify-center gap-2">
+                            <span>START EDUCATIONAL DETOX</span>
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- SWIPE / ADVANCE PROMPT -->
+                <button id="swipe-prompt" class="absolute bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 bg-white/20 backdrop-blur-lg border border-white/30 text-white px-5 py-2.5 rounded-full opacity-0 pointer-events-none transition-all duration-500 shadow-2xl cursor-pointer active:scale-95">
+                    <span class="font-bold text-xs uppercase tracking-wider">Tap or Swipe Up For Next Reel</span>
+                    <svg class="w-4 h-4 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg>
+                </button>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT APP ENGINE -->
+    <script>
+        // --- MULTI-SOURCE RELIABLE MEDIA CATALOG ---
+        const BRAINROT_REELS = [
+            {
+                url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+                handle: "@subway_surfer_ai",
+                caption: "AI Slime Crafting inside Minecraft 4K loop 🤯 #brainrot #satisfying #fyp",
+                audio: "Over-edited Subway Surfer Bassboost",
+                avatar: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=100&auto=format&fit=crop&q=80",
+                ai: 98, brainrot: 99, edu: 0, happiness: 15, sadness: 2, dopamine: 420, attention: -55
+            },
+            {
+                url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4",
+                handle: "@synthetic_loops",
+                caption: "Uncanny valley AI car drift infinite zoom loop 🏎️⚡ #glitch #aiart",
+                audio: "Phonk Drift Remix - Dynamic AI",
+                avatar: "https://images.unsplash.com/photo-1563089145-599997674d42?w=100&auto=format&fit=crop&q=80",
+                ai: 95, brainrot: 92, edu: 0, happiness: 20, sadness: 5, dopamine: 380, attention: -40
+            },
+            {
+                url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4",
+                handle: "@skibidi_core",
+                caption: "Infinite hyper-dopamine reaction reel! Don't look away 👀🔥 #brainrot",
+                audio: "Speed Up Viral Audio - TikTok Trend",
+                avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80",
+                ai: 99, brainrot: 100, edu: 0, happiness: 10, sadness: 0, dopamine: 500, attention: -65
+            },
+            {
+                url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4",
+                handle: "@npc_streamer",
+                caption: "AI NPC repeating phrases for 10 hours straight 🤖 #ai #glitch",
+                audio: "Ice Cream So Good - NPC Audio",
+                avatar: "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=100&auto=format&fit=crop&q=80",
+                ai: 90, brainrot: 94, edu: 0, happiness: 5, sadness: 10, dopamine: 290, attention: -35
+            }
+        ];
+
+        const EDUCATIONAL_REELS = [
+            {
+                url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
+                handle: "@astro_physics_daily",
+                caption: "Visualizing gravitational lensing near a supermassive black hole 🌌 #science #space",
+                audio: "Cosmic Ambient Drone - NASA Soundscape",
+                avatar: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=100&auto=format&fit=crop&q=80",
+                ai: 5, brainrot: 0, edu: 96, happiness: 45, sadness: 10, dopamine: 18, attention: +45
+            },
+            {
+                url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4",
+                handle: "@ocean_biology_lab",
+                caption: "Deep ocean bioluminescent organism mechanics explained 🦑🌊 #nature #ocean",
+                audio: "Calm Waves & Biology Lecture",
+                avatar: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=100&auto=format&fit=crop&q=80",
+                ai: 0, brainrot: 0, edu: 94, happiness: 50, sadness: 5, dopamine: 15, attention: +50
+            },
+            {
+                url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
+                handle: "@quantum_math",
+                caption: "Why the Fibonacci sequence manifests in natural leaf growth 🍃 Math visualizer!",
+                audio: "Acoustic Focus - Piano for Learning",
+                avatar: "https://images.unsplash.com/photo-1509228468518-180dd4864904?w=100&auto=format&fit=crop&q=80",
+                ai: 2, brainrot: 0, edu: 98, happiness: 60, sadness: 0, dopamine: 25, attention: +60
+            },
+            {
+                url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4",
+                handle: "@engineering_explained",
+                caption: "How modern suspension geometry cushions kinetic impact on rough terrain 🚗⚙️",
+                audio: "Mechanical Physics Audio",
+                avatar: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=100&auto=format&fit=crop&q=80",
+                ai: 0, brainrot: 0, edu: 92, happiness: 40, sadness: 0, dopamine: 20, attention: +40
+            }
+        ];
+
+        // --- STATE MANAGEMENT ---
+        let state = {
+            isLocked: true,
+            brainrotStreak: 0,
+            forcedEduCount: 0,
+            currentCategory: 'brainrot',
+            isMuted: true,
+            currentReelData: null,
+            canvasAnimId: null,
+            useCanvasFallback: false
+        };
+
+        // --- DOM ELEMENTS ---
+        const reelContainer = document.getElementById('reel-container');
+        const videoPlayer = document.getElementById('video-player');
+        const fallbackCanvas = document.getElementById('fallback-canvas');
+        const canvasCtx = fallbackCanvas.getContext('2d');
+
+        const labelOverlay = document.getElementById('label-overlay');
+        const acceptBtn = document.getElementById('accept-btn');
+        const swipePrompt = document.getElementById('swipe-prompt');
+        const rightSidebar = document.getElementById('right-sidebar');
+        const bottomInfo = document.getElementById('bottom-info');
+
+        const interventionModal = document.getElementById('intervention-modal');
+        const detoxBtn = document.getElementById('detox-btn');
+        const soundToggleBtn = document.getElementById('sound-toggle-btn');
+        const iconMuted = document.getElementById('icon-muted');
+        const iconUnmuted = document.getElementById('icon-unmuted');
+        
+        const streakBadge = document.getElementById('streak-badge');
+        const feedModeText = document.getElementById('feed-mode-text');
+        const feedModeIcon = document.getElementById('feed-mode-icon');
+
+        // FDA Labels DOM
+        const labelCategoryPill = document.getElementById('label-category-pill');
+        const elLength = document.getElementById('stat-length');
+        const elAi = document.getElementById('stat-ai');
+        const elBrainrot = document.getElementById('stat-brainrot');
+        const elEdu = document.getElementById('stat-edu');
+        const elHappiness = document.getElementById('stat-happiness');
+        const elSadness = document.getElementById('stat-sadness');
+        const elDopamine = document.getElementById('stat-dopamine');
+        const elAttention = document.getElementById('stat-attention');
+
+        // UI Metadata DOM
+        const creatorHandle = document.getElementById('creator-handle');
+        const reelCaption = document.getElementById('reel-caption');
+        const audioTitle = document.getElementById('audio-title');
+        const creatorAvatar = document.getElementById('creator-avatar');
+        const likeBtn = document.getElementById('like-btn');
+        const likeIcon = document.getElementById('like-icon');
+
+        // Resize Canvas to Viewport
+        function resizeCanvas() {
+            fallbackCanvas.width = fallbackCanvas.clientWidth || 360;
+            fallbackCanvas.height = fallbackCanvas.clientHeight || 640;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // --- DYNAMIC CANVAS VISUALIZER FALLBACK ---
+        function startCanvasVisualizer(category) {
+            state.useCanvasFallback = true;
+            fallbackCanvas.classList.remove('opacity-0');
+            videoPlayer.classList.add('opacity-0');
+
+            if (state.canvasAnimId) cancelAnimationFrame(state.canvasAnimId);
+
+            let particles = [];
+            const count = 40;
+            for(let i = 0; i < count; i++) {
+                particles.push({
+                    x: Math.random() * fallbackCanvas.width,
+                    y: Math.random() * fallbackCanvas.height,
+                    radius: Math.random() * 4 + 1,
+                    speedY: (Math.random() - 0.5) * (category === 'brainrot' ? 6 : 2),
+                    speedX: (Math.random() - 0.5) * (category === 'brainrot' ? 6 : 2),
+                    color: category === 'brainrot' 
+                        ? `hsl(${Math.random() * 360}, 100%, 50%)`
+                        : `hsl(${160 + Math.random() * 60}, 80%, 60%)`
+                });
+            }
+
+            let frame = 0;
+            function draw() {
+                frame++;
+                canvasCtx.fillStyle = category === 'brainrot' ? 'rgba(10, 0, 20, 0.2)' : 'rgba(5, 20, 15, 0.2)';
+                canvasCtx.fillRect(0, 0, fallbackCanvas.width, fallbackCanvas.height);
+
+                particles.forEach(p => {
+                    p.x += p.speedX;
+                    p.y += p.speedY;
+
+                    if (p.x < 0 || p.x > fallbackCanvas.width) p.speedX *= -1;
+                    if (p.y < 0 || p.y > fallbackCanvas.height) p.speedY *= -1;
+
+                    canvasCtx.beginPath();
+                    canvasCtx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                    canvasCtx.fillStyle = p.color;
+                    canvasCtx.fill();
+                });
+
+                // Render dynamic text overlay on fallback canvas
+                canvasCtx.fillStyle = "#ffffff";
+                canvasCtx.font = "900 16px sans-serif";
+                canvasCtx.textAlign = "center";
+                const labelText = category === 'brainrot' ? "⚡ SYNTHETIC AI VISUALIZER" : "🌿 EDUCATIONAL DETOX SIMULATION";
+                canvasCtx.fillText(labelText, fallbackCanvas.width / 2, fallbackCanvas.height / 2);
+
+                state.canvasAnimId = requestAnimationFrame(draw);
+            }
+            draw();
+        }
+
+        function stopCanvasVisualizer() {
+            if (state.canvasAnimId) cancelAnimationFrame(state.canvasAnimId);
+            state.useCanvasFallback = false;
+            fallbackCanvas.classList.add('opacity-0');
+            videoPlayer.classList.remove('opacity-0');
+        }
+
+        // --- CORE LOAD & LOCK LOGIC ---
+        function loadNextReel() {
+            flushAttentionSession(true);
+            state.isLocked = true;
+
+            // Apply blur & dim UI
+            videoPlayer.classList.add('blur-2xl', 'scale-110');
+            videoPlayer.classList.remove('blur-0', 'scale-100');
+            fallbackCanvas.classList.add('blur-2xl', 'scale-110');
+            fallbackCanvas.classList.remove('blur-0', 'scale-100');
+
+            rightSidebar.classList.remove('opacity-100');
+            rightSidebar.classList.add('opacity-30');
+            bottomInfo.classList.remove('opacity-100');
+            bottomInfo.classList.add('opacity-30');
+
+            swipePrompt.classList.remove('opacity-100');
+            swipePrompt.classList.add('opacity-0', 'pointer-events-none');
+
+            // Determine Video Category
+            if (state.forcedEduCount > 0) {
+                state.currentCategory = 'educational';
+            } else {
+                state.currentCategory = Math.random() > 0.4 ? 'brainrot' : 'educational';
+            }
+
+            // Pick Video Payload
+            const pool = state.currentCategory === 'brainrot' ? BRAINROT_REELS : EDUCATIONAL_REELS;
+            const reel = pool[Math.floor(Math.random() * pool.length)];
+            state.currentReelData = reel;
+
+            // Update Header & Badge UI
+            if (state.forcedEduCount > 0) {
+                feedModeIcon.textContent = "🌱";
+                feedModeText.textContent = "Detox Mode";
+                streakBadge.textContent = `Detox: ${state.forcedEduCount} left`;
+                streakBadge.className = "bg-green-600 text-white text-[11px] font-black px-2.5 py-1 rounded-full border border-green-400/30";
+            } else {
+                feedModeIcon.textContent = "🧠";
+                feedModeText.textContent = "Mindful Feed";
+                streakBadge.textContent = `Streak: ${state.brainrotStreak}/3 AI`;
+                streakBadge.className = state.brainrotStreak >= 2 
+                    ? "bg-red-600 animate-pulse text-white text-[11px] font-black px-2.5 py-1 rounded-full border border-red-400/30"
+                    : "bg-zinc-800 text-white text-[11px] font-black px-2.5 py-1 rounded-full border border-white/20";
+            }
+
+            // Populate FDA Card Stats
+            elLength.textContent = `${Math.floor(Math.random() * 20 + 15)}s`;
+            elAi.textContent = `${reel.ai}%`;
+            elBrainrot.textContent = `${reel.brainrot}%`;
+            elEdu.textContent = `${reel.edu}%`;
+            elHappiness.textContent = `${reel.happiness > 0 ? '+' : ''}${reel.happiness}%`;
+            elSadness.textContent = `${reel.sadness > 0 ? '+' : ''}${reel.sadness}%`;
+            elDopamine.textContent = `+${reel.dopamine}%`;
+
+            if (state.currentCategory === 'brainrot') {
+                labelCategoryPill.textContent = "AI BRAINROT";
+                labelCategoryPill.className = "bg-black text-white px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-wider";
+                elAttention.textContent = `${reel.attention}%`;
+                elAttention.className = "text-base font-black text-red-600";
+            } else {
+                labelCategoryPill.textContent = "EDUCATIONAL DETOX";
+                labelCategoryPill.className = "bg-green-700 text-white px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-wider";
+                elAttention.textContent = `${reel.attention}%`;
+                elAttention.className = "text-base font-black text-green-600";
+            }
+
+            // Populate Caption & Social Metadata
+            creatorHandle.textContent = reel.handle;
+            reelCaption.textContent = reel.caption;
+            audioTitle.textContent = reel.audio;
+            creatorAvatar.src = reel.avatar;
+            likeIcon.setAttribute('fill', '#ffffff');
+
+            // Load Video Payload
+            stopCanvasVisualizer();
+            videoPlayer.pause();
+            videoPlayer.src = reel.url;
+            videoPlayer.load();
+
+            // Set up load fallback timer (If video fails or stalls, start canvas fallback dynamically)
+            const fallbackTimeout = setTimeout(() => {
+                if (videoPlayer.readyState < 2) {
+                    console.log("Network delayed. Initializing procedural Canvas fallback.");
+                    startCanvasVisualizer(state.currentCategory);
+                }
+            }, 1800);
+
+            videoPlayer.oncanplay = () => {
+                clearTimeout(fallbackTimeout);
+                stopCanvasVisualizer();
+            };
+
+            videoPlayer.onerror = () => {
+                clearTimeout(fallbackTimeout);
+                startCanvasVisualizer(state.currentCategory);
+            };
+
+            // Display Warning Overlay
+            labelOverlay.classList.remove('opacity-0', 'pointer-events-none');
+        }
+
+        // --- UNLOCK & PLAY ---
+        function unlockAndPlay() {
+            beginAttentionSession();
+            state.isLocked = false;
+
+            // Hide FDA warning card
+            labelOverlay.classList.add('opacity-0', 'pointer-events-none');
+
+            // Unblur Video & Show UI
+            videoPlayer.classList.remove('blur-2xl', 'scale-110');
+            videoPlayer.classList.add('blur-0', 'scale-100');
+            fallbackCanvas.classList.remove('blur-2xl', 'scale-110');
+            fallbackCanvas.classList.add('blur-0', 'scale-100');
+
+            rightSidebar.classList.remove('opacity-30');
+            rightSidebar.classList.add('opacity-100');
+            bottomInfo.classList.remove('opacity-30');
+            bottomInfo.classList.add('opacity-100');
+
+            swipePrompt.classList.remove('opacity-0', 'pointer-events-none');
+            swipePrompt.classList.add('opacity-100');
+
+            // Play Video Inline
+            videoPlayer.muted = state.isMuted;
+            const playPromise = videoPlayer.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(() => {
+                    // Fallback to muted playback if autoplay restrictions trigger
+                    videoPlayer.muted = true;
+                    videoPlayer.play().catch(() => {
+                        startCanvasVisualizer(state.currentCategory);
+                    });
+                });
+            }
+        }
+
+        // --- EVENT LISTENERS & INTERACTION ---
+
+        // 1. Accept Button (I HAVE READ THIS)
+        acceptBtn.addEventListener('click', () => {
+            if (state.currentCategory === 'brainrot') {
+                state.brainrotStreak++;
+            } else {
+                state.brainrotStreak = 0;
+                if (state.forcedEduCount > 0) state.forcedEduCount--;
+            }
+
+            // Check 3-Strike Rule Intervention
+            if (state.brainrotStreak >= 3) {
+                interventionModal.classList.remove('hidden');
+            } else {
+                unlockAndPlay();
+            }
+        });
+
+        // 2. Detox Modal Accept Button
+        detoxBtn.addEventListener('click', () => {
+            interventionModal.classList.add('hidden');
+            state.brainrotStreak = 0;
+            state.forcedEduCount = 3;
+            advanceToNextReel();
+        });
+
+        // 3. Sound Toggle Button
+        soundToggleBtn.addEventListener('click', () => {
+            state.isMuted = !state.isMuted;
+            videoPlayer.muted = state.isMuted;
+            if (state.isMuted) {
+                iconMuted.classList.remove('hidden');
+                iconUnmuted.classList.add('hidden');
+            } else {
+                iconMuted.classList.add('hidden');
+                iconUnmuted.classList.remove('hidden');
+            }
+        });
+
+        // 4. Interactive Like Button
+        likeBtn.addEventListener('click', () => {
+            likeIcon.setAttribute('fill', '#ef4444');
+        });
+
+        // 5. Swipe Up Navigation Logic
+        function advanceToNextReel() {
+            if (state.isLocked && interventionModal.classList.contains('hidden')) return;
+
+            reelContainer.classList.add('slide-up-out');
+
+            setTimeout(() => {
+                reelContainer.classList.remove('slide-up-out');
+                reelContainer.classList.add('slide-up-in-start');
+
+                loadNextReel();
+
+                void reelContainer.offsetWidth; // Trigger DOM reflow
+
+                reelContainer.classList.remove('slide-up-in-start');
+                reelContainer.classList.add('slide-up-in-active');
+
+                setTimeout(() => {
+                    reelContainer.classList.remove('slide-up-in-active');
+                }, 400);
+            }, 400);
+        }
+
+        // Tap on Swipe Prompt
+        swipePrompt.addEventListener('click', advanceToNextReel);
+
+        // Touch Swipe Event Handling
+        let startY = 0;
+        let isDragging = false;
+
+        window.addEventListener('touchstart', (e) => {
+            if (e.target.closest('#label-overlay') || e.target.closest('#intervention-modal')) return;
+            startY = e.touches[0].clientY;
+            isDragging = true;
+        }, { passive: true });
+
+        window.addEventListener('touchend', (e) => {
+            if (!isDragging) return;
+            isDragging = false;
+            const endY = e.changedTouches[0].clientY;
+            if (startY - endY > 60) {
+                advanceToNextReel();
+            }
+        }, { passive: true });
+
+        // Desktop Mouse Wheel Scroll Support
+        window.addEventListener('wheel', (e) => {
+            if (e.deltaY > 40 && !state.isLocked) {
+                advanceToNextReel();
+            }
+        });
+
+        
+        // Demo-only integration. Both pages must share the same web origin.
+        let attentionSession=null;
+        function beginAttentionSession(){
+            attentionSession={id:String(Date.now())+'-'+Math.random().toString(36).slice(2),startedAt:new Date().toISOString(),watchedMs:0,lastTick:Date.now(),category:state.currentCategory==='brainrot'?'fast':'carbs'};
+        }
+        function flushAttentionSession(finish=false){
+            if(!attentionSession)return;
+            const now=Date.now();
+            if(!state.isLocked && !videoPlayer.paused && !document.hidden) attentionSession.watchedMs+=Math.min(10000,Math.max(0,now-attentionSession.lastTick));
+            attentionSession.lastTick=now;
+            if(attentionSession.watchedMs>=1000){
+                try{
+                    let list=JSON.parse(localStorage.getItem('attention_facts_events_v1')||'[]');
+                    if(!Array.isArray(list))list=[];
+                    list=list.filter(e=>e.id!==attentionSession.id);
+                    list.push({id:attentionSession.id,startedAt:attentionSession.startedAt,watchedMs:attentionSession.watchedMs,category:attentionSession.category});
+                    localStorage.setItem('attention_facts_events_v1',JSON.stringify(list.slice(-1500)));
+                    if(window.AttentionCloud?.enabled){const ev=list[list.length-1];AttentionCloud.push([{id:'cf-'+ev.id,source:'content_facts',startedAt:ev.startedAt,category:ev.category,watchedMs:ev.watchedMs,note:'Content Facts reel'}]);}
+                }catch(e){console.warn('Could not save viewing session',e)}
+            }
+            if(finish)attentionSession=null;
+        }
+        document.addEventListener('visibilitychange',()=>{flushAttentionSession(false);if(!document.hidden&&attentionSession)attentionSession.lastTick=Date.now()});
+        window.addEventListener('pagehide',()=>flushAttentionSession(true));
+        setInterval(()=>flushAttentionSession(false),2000);
+
+        // --- INIT APP ---
+        loadNextReel();
+    </script>
+</body>
+</html>
