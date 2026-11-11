@@ -2,5 +2,5 @@
 // Never use a service_role or secret key in browser code.
 window.ATTENTION_CLOUD_CONFIG = {
   url: "https://giifkbxkarxpymvsavpn.supabase.co/rest/v1/",
-  anonKey: "sb_publishable_pZzK1wbSIUwBRLE1SuHl7Q_56drTt4C"
+  anonKey: "sb_publishable_Gw1NLQyCDcV3qx1ZprdhUA_MOcilyez"
 };
